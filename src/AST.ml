@@ -279,6 +279,16 @@ let make_buy args =
     cost = bbm.bbm_cost |> default [];
   }
 
+type arithmetic_expression =
+  | Constant of int
+  | Physical_damage_per_second
+  | Elemental_damage_per_second
+  | Total_damage_per_second
+  | Sum of arithmetic_expression * arithmetic_expression
+  | Product of arithmetic_expression * arithmetic_expression
+  | Difference of arithmetic_expression * arithmetic_expression
+  | Quotient of arithmetic_expression * arithmetic_expression
+
 type condition =
   (* Operators *)
   | True
@@ -294,6 +304,11 @@ type condition =
   | Suffix_count of int * int
   | Open_suffix
   | Full_suffixes
+  | Is_equal of arithmetic_expression * arithmetic_expression
+  | Greater_than of arithmetic_expression * arithmetic_expression
+  | Greater_equal of arithmetic_expression * arithmetic_expression
+  | Less_than of arithmetic_expression * arithmetic_expression
+  | Less_equal of arithmetic_expression * arithmetic_expression
 
 let maybe_parentheses use_parentheses document =
   let open Pretext in
@@ -301,6 +316,54 @@ let maybe_parentheses use_parentheses document =
     box [ atom "("; break0; indent; document; dedent; break0; atom ")" ]
   else
     document
+
+let rec pp_arithmetic_expression ?(ctx = `top) expression =
+  let open Pretext in
+  match expression with
+    | Constant x -> int x
+    | Physical_damage_per_second -> atom "Pdps"
+    | Elemental_damage_per_second -> atom "Edps"
+    | Total_damage_per_second -> atom "Dps"
+    | Sum (lhs, rhs) ->
+        let parentheses =
+          match ctx with
+            | `top -> false
+            | `product_or_quotient | `right_hand_side -> true
+          in
+            maybe_parentheses parentheses @@ seq [
+              pp_arithmetic_expression lhs; space; atom "+"; break;
+              pp_arithmetic_expression ~ctx: `right_hand_side rhs
+            ]
+    | Product (lhs, rhs) ->
+        let parentheses =
+          match ctx with
+            | `top | `product_or_quotient -> false
+            | `right_hand_side -> true
+          in
+            maybe_parentheses parentheses @@ seq [
+              pp_arithmetic_expression ~ctx: `product_or_quotient lhs; space; atom "*"; break;
+              pp_arithmetic_expression ~ctx: `right_hand_side rhs
+            ]
+    | Difference (lhs, rhs) ->
+        let parentheses =
+          match ctx with
+            | `top -> false
+            | `product_or_quotient | `right_hand_side -> true
+          in
+            maybe_parentheses parentheses @@ seq [
+              pp_arithmetic_expression lhs; space; atom "-"; break;
+              pp_arithmetic_expression ~ctx: `right_hand_side rhs
+            ]
+    | Quotient (lhs, rhs) ->
+        let parentheses =
+          match ctx with
+            | `top | `product_or_quotient -> false
+            | `right_hand_side -> true
+          in
+            maybe_parentheses parentheses @@ seq [
+              pp_arithmetic_expression ~ctx: `product_or_quotient lhs; space; atom "/"; break;
+              pp_arithmetic_expression ~ctx: `right_hand_side rhs
+            ]
 
 let rec pp_condition ?(ctx = `top) condition =
   let open Pretext in
@@ -353,6 +416,16 @@ let rec pp_condition ?(ctx = `top) condition =
         atom "open_suffix"
     | Full_suffixes ->
         atom "full_suffixes"
+    | Is_equal (lhs, rhs) ->
+        seq [ pp_arithmetic_expression lhs; space; atom "=="; space; pp_arithmetic_expression rhs]
+    | Greater_than (lhs, rhs) ->
+        seq [ pp_arithmetic_expression lhs; space; atom ">"; space; pp_arithmetic_expression rhs]
+    | Greater_equal (lhs, rhs) ->
+        seq [ pp_arithmetic_expression lhs; space; atom ">="; space; pp_arithmetic_expression rhs]
+    | Less_than (lhs, rhs) ->
+        seq [ pp_arithmetic_expression lhs; space; atom "<"; space; pp_arithmetic_expression rhs]
+    | Less_equal (lhs, rhs) ->
+        seq [ pp_arithmetic_expression lhs; space; atom "<="; space; pp_arithmetic_expression rhs]
 
 type simple_instruction =
   | Goto of Label.t

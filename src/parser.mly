@@ -9,6 +9,8 @@
 %}
 
 %token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
+%token ASTERISK MINUS SLASH
+%token PDPS EDPS DPS
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
 %token SHAPER ELDER CRUSADER HUNTER REDEEMER WARLORD
 %token IF THEN ELSE UNTIL REPEAT WHILE DO GOTO STOP SET_ASIDE SWAP USE_IMPRINT GAIN HAS
@@ -22,6 +24,10 @@
 
 %left OR
 %left AND
+%left ASTERISK
+%left MINUS
+%left PLUS
+%left SLASH
 %nonassoc NOT
 
 %type <AST.t> program
@@ -57,6 +63,26 @@ buy_arguments:
   { BA_for $2 :: $3 }
 |
   { [] }
+
+arithmetic_expression:
+| INT
+  { Constant $1 }
+| PDPS
+  { Physical_damage_per_second }
+| EDPS
+  { Elemental_damage_per_second }
+| DPS
+  { Total_damage_per_second }
+| arithmetic_expression PLUS arithmetic_expression
+  { Sum ($1, $3) }
+| arithmetic_expression ASTERISK arithmetic_expression
+  { Product ($1, $3) }
+| arithmetic_expression MINUS arithmetic_expression
+  { Difference ($1, $3) }
+| arithmetic_expression SLASH arithmetic_expression
+  { Quotient ($1, $3) }
+| LPAR arithmetic_expression RPAR
+  { $2 }
 
 condition:
 | TRUE

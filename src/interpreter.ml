@@ -101,6 +101,27 @@ let with_aside state f =
     | Some item ->
         f item
 
+let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression) =
+  match expression with
+    | Constant x -> x
+    | Physical_damage_per_second -> 0
+       (* with_item state Item.calculate_pdps *)
+    | Elemental_damage_per_second -> 0
+    | Total_damage_per_second -> 0
+    | Sum (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        + eval_arithmetic_expression state rhs
+    | Product (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        * eval_arithmetic_expression state rhs
+    | Difference (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        - eval_arithmetic_expression state rhs
+    | Quotient (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        / eval_arithmetic_expression state rhs
+
+
 let rec eval_condition state (condition: AST.condition) =
   match condition with
     | True ->
@@ -136,6 +157,16 @@ let rec eval_condition state (condition: AST.condition) =
     | Full_suffixes ->
         with_item state @@ fun item ->
         Item.suffix_count item >= Item.max_suffix_count item
+    | Is_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs == eval_arithmetic_expression state rhs
+    | Greater_than (lhs, rhs) ->
+        eval_arithmetic_expression state lhs > eval_arithmetic_expression state rhs
+    | Greater_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs >= eval_arithmetic_expression state rhs
+    | Less_than (lhs, rhs) ->
+        eval_arithmetic_expression state lhs < eval_arithmetic_expression state rhs
+    | Less_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs <= eval_arithmetic_expression state rhs
 
 let is_done state =
   state.point < 0 || state.point >= Array.length state.program.instructions
