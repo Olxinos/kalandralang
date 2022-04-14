@@ -101,6 +101,23 @@ let with_aside state f =
     | Some item ->
         f item
 
+let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression) =
+  match expression with
+    | Constant x -> x
+    | Sum (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        + eval_arithmetic_expression state rhs
+    | Product (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        * eval_arithmetic_expression state rhs
+    | Difference (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        - eval_arithmetic_expression state rhs
+    | Quotient (lhs, rhs) ->
+        eval_arithmetic_expression state lhs
+        / eval_arithmetic_expression state rhs
+
+
 let rec eval_condition state (condition: AST.condition) =
   match condition with
     | True ->
@@ -136,6 +153,16 @@ let rec eval_condition state (condition: AST.condition) =
     | Full_suffixes ->
         with_item state @@ fun item ->
         Item.suffix_count item >= Item.max_suffix_count item
+    | Is_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs == eval_arithmetic_expression state rhs
+    | Greater_than (lhs, rhs) ->
+        eval_arithmetic_expression state lhs > eval_arithmetic_expression state rhs
+    | Greater_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs >= eval_arithmetic_expression state rhs
+    | Less_than (lhs, rhs) ->
+        eval_arithmetic_expression state lhs < eval_arithmetic_expression state rhs
+    | Less_equal (lhs, rhs) ->
+        eval_arithmetic_expression state lhs <= eval_arithmetic_expression state rhs
 
 let is_done state =
   state.point < 0 || state.point >= Array.length state.program.instructions
@@ -532,6 +559,10 @@ let run_simple_instruction state (instruction: AST.simple_instruction) =
         goto_next state
     | Echo message ->
         state.echo message;
+        goto_next state
+    | Echo_int expression ->
+        let value = eval_arithmetic_expression state expression in
+        state.echo (string_of_int value);
         goto_next state
     | Show ->
         (

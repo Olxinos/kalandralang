@@ -9,6 +9,8 @@
 %}
 
 %token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
+%token DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
+%token ASTERISK MINUS SLASH
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
 %token SHAPER ELDER CRUSADER HUNTER REDEEMER WARLORD EXARCH EATER SYNTHESIZED
 %token IF THEN ELSE UNTIL REPEAT WHILE DO GOTO STOP SET_ASIDE SWAP USE_IMPRINT GAIN HAS
@@ -22,6 +24,8 @@
 
 %left OR
 %left AND
+%left PLUS MINUS
+%left ASTERISK SLASH
 %nonassoc NOT
 
 %type <AST.t> program
@@ -61,6 +65,20 @@ buy_arguments:
 |
   { [] }
 
+arithmetic_expression:
+| INT
+  { Constant $1 }
+| arithmetic_expression PLUS arithmetic_expression
+  { Sum ($1, $3) }
+| arithmetic_expression ASTERISK arithmetic_expression
+  { Product ($1, $3) }
+| arithmetic_expression MINUS arithmetic_expression
+  { Difference ($1, $3) }
+| arithmetic_expression SLASH arithmetic_expression
+  { Quotient ($1, $3) }
+| LPAR arithmetic_expression RPAR
+  { $2 }
+
 condition:
 | TRUE
   { True }
@@ -96,6 +114,16 @@ condition:
   { Full_suffixes }
 | LPAR condition RPAR
   { $2 }
+| arithmetic_expression DOUBLEEQUAL arithmetic_expression
+  { Is_equal ($1, $3) }
+| arithmetic_expression GREATER arithmetic_expression
+  { Greater_than ($1, $3) }
+| arithmetic_expression GREATEREQUAL arithmetic_expression
+  { Greater_equal ($1, $3) }
+| arithmetic_expression LESS arithmetic_expression
+  { Less_than ($1, $3) }
+| arithmetic_expression LESSEQUAL arithmetic_expression
+  { Less_equal ($1, $3) }
 
 plus_fossils:
 | PLUS FOSSIL plus_fossils
@@ -128,6 +156,8 @@ simple_instruction:
   { node @@ Simple (Gain $2) }
 | ECHO STRING
   { node @@ Simple (Echo $2) }
+| ECHO arithmetic_expression
+  { node @@ Simple (Echo_int $2) }
 | SHOW
   { node @@ Simple Show }
 | SHOW_MOD_POOL

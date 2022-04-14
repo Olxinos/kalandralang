@@ -187,6 +187,14 @@ rule token = parse
   | '"' ([^'"' '\n']* as x) '"' { STRING x }
   | ['a'-'z' '_']+ as x { keyword x }
   | ".." { DOT_DOT }
+  | "==" { DOUBLEEQUAL }
+  | ">" { GREATER }
+  | ">=" { GREATEREQUAL }
+  | "<" { LESS }
+  | "<=" { LESSEQUAL }
+  | "*" { ASTERISK }
+  | "-" { MINUS }
+  | "/" { SLASH }
   | '(' { LPAR }
   | ')' { RPAR }
   | '{' { LBRACE }

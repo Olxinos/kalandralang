@@ -37,6 +37,12 @@ type t =
     influence: Influence.t;
   }
 
+let get_stat_value (item : t) (stat_id : Id.t) : int =
+  let accumulate acc modifier =
+    Mod.get_stat_value ~acc: acc modifier.modifier stat_id
+  in
+    List.fold_left accumulate 0 item.mods
+
 let pp { base; level; tags; rarity; mods; split; influence } =
   Pretext.OCaml.record [
     "base", Base_item.pp base;

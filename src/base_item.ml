@@ -99,6 +99,11 @@ let load filename =
   in
   List.iter add_entry JSON.(parse_file filename |> as_object)
 
+let get_property base_item (property_name : string) : int =
+  match Id.Map.find_opt (Id.make property_name) base_item.properties with
+    | Some x -> x
+    | None -> fail "no '%S' property in base item %S" (property_name) (Id.show base_item.id)
+
 let by_id id =
   match Id.Map.find_opt id !id_map with
     | None ->
