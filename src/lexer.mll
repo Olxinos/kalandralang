@@ -47,9 +47,9 @@
     | "open_suffix" -> OPEN_SUFFIX
     | "full_suffixes" -> FULL_SUFFIXES
     (* Expressions *)
-    | "Pdps" -> PDPS
-    | "Edps" -> EDPS
-    | "Dps" -> DPS
+    | "pdps" -> PDPS
+    | "edps" -> EDPS
+    | "dps" -> DPS
     (* Currencies *)
     | "transmute" -> CURRENCY Orb_of_transmutation
     | "augment" -> CURRENCY Orb_of_augmentation

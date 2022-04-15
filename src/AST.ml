@@ -321,9 +321,9 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
   let open Pretext in
   match expression with
     | Constant x -> int x
-    | Physical_damage_per_second -> atom "Pdps"
-    | Elemental_damage_per_second -> atom "Edps"
-    | Total_damage_per_second -> atom "Dps"
+    | Physical_damage_per_second -> atom "pdps"
+    | Elemental_damage_per_second -> atom "edps"
+    | Total_damage_per_second -> atom "dps"
     | Sum (lhs, rhs) ->
         let parentheses =
           match ctx with
