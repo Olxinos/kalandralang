@@ -18,6 +18,7 @@ type stat =
     id: Id.t;
     min: int;
     max: int;
+    current: int;
   }
 
 type t =
@@ -43,6 +44,18 @@ type t =
     adds_tags: Id.Set.t;
     stats: stat list;
   }
+
+let choose_randomly (min, max) =
+  if max >= min then
+    min + Random.int (max - min + 1)
+  else
+    max + Random.int (min - max + 1)
+
+let roll_stat stat : stat =
+  { stat with current = choose_randomly (stat.min, stat.max) }
+
+let roll_modifier modifier : t =
+  { modifier with stats = List.map roll_stat modifier.stats }
 
 let get_stat_value ?(acc = 0) (modifier : t) (stat_id : Id.t) : int =
   let accumulate acc (stat : stat) =
@@ -89,7 +102,7 @@ let is_attack modifier =
 let pp_spawn_weight (tag, weight) =
   Pretext.OCaml.tuple [ Id.pp tag; Pretext.OCaml.int weight ]
 
-let pp_stat { id; min; max } =
+let pp_stat { id; min; max; _ } =
   Pretext.OCaml.record [
     "id", Id.pp id;
     "min", Pretext.OCaml.int min;
@@ -191,6 +204,7 @@ let load filename =
                 let id = ref Id.empty in
                 let min = ref 0 in
                 let max = ref 0 in
+                let current = 0 in
                 let handle_value (field, value) =
                   match field with
                     | "id" -> id := JSON.as_id value
@@ -203,6 +217,7 @@ let load filename =
                   id = !id;
                   min = !min;
                   max = !max;
+                  current = current;
                 }
               in
               stats := JSON.as_array value |> List.map as_stat
@@ -248,6 +263,7 @@ type show_mode =
   | With_placeholders
   | With_ranges
   | With_random_values
+  | With_current_values
 
 let show ?(indentation = 0) ?(fractured = false) mode modifier =
   let generation_type =
@@ -281,13 +297,10 @@ let show ?(indentation = 0) ?(fractured = false) mode modifier =
               | With_ranges ->
                   With_ranges ranges
               | With_random_values ->
-                  let choose_randomly (min, max) =
-                    if max >= min then
-                      min + Random.int (max - min + 1)
-                    else
-                      max + Random.int (min - max + 1)
-                  in
                   With_values (Id.Map.map choose_randomly ranges)
+              | With_current_values ->
+                  let add_value acc (stat : stat) = Id.Map.add stat.id stat.current acc in
+                  With_values (List.fold_left add_value Id.Map.empty modifier.stats)
           in
           let strings =
             let ids = List.map (fun (stat: stat) -> stat.id) modifier.stats in

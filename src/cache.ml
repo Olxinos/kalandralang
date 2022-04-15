@@ -164,7 +164,7 @@ let i_mod_generation_type i: Mod.generation_type =
     | 1 -> Suffix
     | _ -> failwith "invalid mod generation type"
 
-let o_mod_stat o ({ id; min; max }: Mod.stat) =
+let o_mod_stat o ({ id; min; max; _ }: Mod.stat) =
   o_id o id;
   o_int o min;
   o_int o max
@@ -173,7 +173,7 @@ let i_mod_stat i: Mod.stat =
   let id = i_id i in
   let min = i_int i in
   let max = i_int i in
-  { id; min; max }
+  { id; min; max; current=0 }
 
 let o_mod o (
     { id; domain; generation_type; group; required_level; spawn_weights;

@@ -83,7 +83,7 @@ let pp { base; level; tags; rarity; mods; split } =
   ]
 
 let show_modifier { modifier; fractured } =
-  Mod.show ~fractured With_random_values modifier
+  Mod.show ~fractured With_current_values modifier
 
 let has_influence influence item =
   match Base_tag.get_influence_tag_for_tags item.base.tags influence with
@@ -286,7 +286,7 @@ let mod_pool ?(fossils = []) ?tag ?(crafted = false) ?only item =
   List.filter_map can_spawn_mod !Mod.pool
 
 let add_mod_force ?(fractured = false) modifier item =
-  { item with mods = { modifier; fractured } :: item.mods }
+  { item with mods = { modifier = Mod.roll_modifier modifier; fractured } :: item.mods }
 
 let add_mod ?(fractured = false) modifier item =
   if fractured && is_fractured item then
