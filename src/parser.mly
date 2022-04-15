@@ -25,10 +25,8 @@
 
 %left OR
 %left AND
-%left ASTERISK
-%left MINUS
-%left PLUS
-%left SLASH
+%left PLUS MINUS
+%left ASTERISK SLASH
 %nonassoc NOT
 
 %type <AST.t> program
