@@ -50,6 +50,8 @@
     | "open_suffix" -> OPEN_SUFFIX
     | "full_suffixes" -> FULL_SUFFIXES
     (* Expressions *)
+    | "getmin" -> GETMIN
+    | "getmax" -> GETMAX
     | "base" -> BASE
     (* Currencies *)
     | "transmute" -> CURRENCY Orb_of_transmutation

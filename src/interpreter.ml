@@ -104,6 +104,10 @@ let with_aside state f =
 let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression) =
   match expression with
     | Constant x -> x
+    | Get_min stat_id ->
+        with_item state (Item.get_min_stat_value stat_id)
+    | Get_max stat_id ->
+        with_item state (Item.get_max_stat_value stat_id)
     | Base stat_id ->
         with_item state (fun item -> Base_item.get_property item.base stat_id)
     | Sum (lhs, rhs) ->
