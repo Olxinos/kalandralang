@@ -408,12 +408,6 @@ let rec eval_arithmetic_expression library state (expression : AST.arithmetic_ex
           | None -> state, 0
           | Some value -> state, value
         end
-    | Physical_damage_per_second ->
-        state, int_of_float @@ with_item state Item.calculate_pdps
-    | Elemental_damage_per_second ->
-        state, int_of_float @@ with_item state Item.calculate_edps
-    | Total_damage_per_second ->
-        state, int_of_float @@ with_item state Item.calculate_dps
     | Get stat_id ->
         state, with_item state (Item.get_stat_value stat_id)
     | Base stat_id ->

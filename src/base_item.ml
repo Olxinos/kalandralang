@@ -119,15 +119,6 @@ let get_property base_item (property_id : Id.t) : int =
     | Some x -> x
     | None -> fail "no '%S' property in base item %S" (Id.show property_id) (Id.show base_item.id)
 
-let attack_time_in_milliseconds base_item =
-  get_property base_item (Id.make "attack_time")
-
-let min_physical_damage base_item =
-  get_property base_item (Id.make "physical_damage_min")
-
-let max_physical_damage base_item =
-  get_property base_item (Id.make "physical_damage_max")
-
 let by_id id =
   match Id.Map.find_opt id !id_map with
     | None ->

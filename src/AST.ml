@@ -282,9 +282,6 @@ let make_buy args =
 type arithmetic_expression =
   | Constant of int
   | Variable of string
-  | Physical_damage_per_second
-  | Elemental_damage_per_second
-  | Total_damage_per_second
   | Get of Id.t
   | Base of Id.t
   | Function_call of string * arithmetic_expression list
@@ -326,9 +323,6 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
   match expression with
     | Constant x -> int x
     | Variable x -> atom x
-    | Physical_damage_per_second -> atom "pdps"
-    | Elemental_damage_per_second -> atom "edps"
-    | Total_damage_per_second -> atom "dps"
     | Get state_id -> seq [atom "get"; space; atom (Id.show state_id)]
     | Base state_id -> seq [atom "base"; space; atom (Id.show state_id)]
     | Sum (lhs, rhs) ->

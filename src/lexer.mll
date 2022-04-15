@@ -52,9 +52,6 @@
     | "get" -> GET
     | "base" -> BASE
     | "call" -> CALL
-    | "pdps" -> PDPS
-    | "edps" -> EDPS
-    | "dps" -> DPS
     (* Currencies *)
     | "transmute" -> CURRENCY Orb_of_transmutation
     | "augment" -> CURRENCY Orb_of_augmentation
