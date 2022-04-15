@@ -22,5 +22,9 @@
   cohttp-lwt-unix
   ezjsonm
   lwt
+  menhir
+  menhirLib
   re
   uri))
+
+(using menhir 2.1)
