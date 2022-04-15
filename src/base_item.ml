@@ -6,6 +6,7 @@ type domain =
   | Veiled
   | Misc (* tree-only jewels *)
   | Abyss_jewel
+  | Affliction_jewel
 
 let show_domain = function
   | Item -> "Item"
@@ -13,6 +14,7 @@ let show_domain = function
   | Veiled -> "Veiled"
   | Misc -> "Misc"
   | Abyss_jewel -> "Abyss_jewel"
+  | Affliction_jewel -> "Cluster_jewel"
 
 let pp_domain domain =
   Pretext.OCaml.variant (show_domain domain) []
@@ -29,6 +31,8 @@ let as_domain json =
         Some Misc
     | "abyss_jewel" ->
         Some Abyss_jewel
+    | "affliction_jewel" ->
+        Some Affliction_jewel
     | _ ->
         None
 
@@ -91,7 +95,7 @@ let load filename =
     match !domain with
       | None | Some Crafted | Some Veiled ->
           ()
-      | Some (Item | Misc | Abyss_jewel as domain) ->
+      | Some (Item | Misc | Affliction_jewel | Abyss_jewel as domain) ->
           let base_item =
             {
               id;
