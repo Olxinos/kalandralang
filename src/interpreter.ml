@@ -104,8 +104,8 @@ let with_aside state f =
 let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression) =
   match expression with
     | Constant x -> x
-    | Physical_damage_per_second -> 0
-       (* with_item state Item.calculate_pdps *)
+    | Physical_damage_per_second ->
+       int_of_float @@ with_item state Item.calculate_pdps
     | Elemental_damage_per_second -> 0
     | Total_damage_per_second -> 0
     | Sum (lhs, rhs) ->

@@ -36,6 +36,15 @@ type t =
     split: bool;
   }
 
+let calculate_pdps item : float =
+  let flat_min = float_of_int @@ Base_item.min_physical_damage item.base
+  and flat_max = float_of_int @@ Base_item.max_physical_damage item.base
+  and attack_time = float_of_int @@ Base_item.attack_time_in_milliseconds item.base
+  in
+    (* assumes 20% quality, ignores mods TODO *)
+    (flat_min +. flat_max) *. 1.2 *. 500. /. attack_time
+
+
 let pp { base; level; tags; rarity; mods; split } =
   Pretext.OCaml.record [
     "base", Base_item.pp base;
