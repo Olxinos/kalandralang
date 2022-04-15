@@ -44,11 +44,18 @@ let show_origin json =
 let fail json message =
   failwith (show_origin json ^ ": " ^ message)
 
-let as_int json =
+let as_int_opt json =
   match json.json with
     | `Float x ->
-        int_of_float x
+        Some (int_of_float x)
     | _ ->
+        None
+
+let as_int json =
+  match as_int_opt json with
+    | Some x ->
+        x
+    | None ->
         fail json "not a number"
 
 let as_float json =

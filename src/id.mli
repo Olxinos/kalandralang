@@ -13,3 +13,5 @@ sig
 end
 
 module Map: Map.S with type key = t
+
+val pp_int_map: int Map.t -> Pretext.t

@@ -49,6 +49,8 @@
     | "no_suffix" -> NO_SUFFIX
     | "open_suffix" -> OPEN_SUFFIX
     | "full_suffixes" -> FULL_SUFFIXES
+    (* Expressions *)
+    | "base" -> BASE
     (* Currencies *)
     | "transmute" -> CURRENCY Orb_of_transmutation
     | "augment" -> CURRENCY Orb_of_augmentation

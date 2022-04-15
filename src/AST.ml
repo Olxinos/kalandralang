@@ -311,6 +311,7 @@ let make_buy args =
 
 type arithmetic_expression =
   | Constant of int
+  | Base of Id.t
   | Sum of arithmetic_expression * arithmetic_expression
   | Product of arithmetic_expression * arithmetic_expression
   | Difference of arithmetic_expression * arithmetic_expression
@@ -348,6 +349,7 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
   let open Pretext in
   match expression with
     | Constant x -> int x
+    | Base state_id -> seq [atom "base"; space; atom (Id.show state_id)]
     | Sum (lhs, rhs) ->
         let parentheses =
           match ctx with
