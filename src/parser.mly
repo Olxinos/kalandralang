@@ -9,9 +9,9 @@
 %}
 
 %token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
-%token DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
+%token EQUAL DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token ASTERISK MINUS SLASH
-%token PDPS EDPS DPS GET
+%token PDPS EDPS DPS GET RETURN FUNCTION CALL
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
 %token SHAPER ELDER CRUSADER HUNTER REDEEMER WARLORD
 %token IF THEN ELSE UNTIL REPEAT WHILE DO GOTO STOP SET_ASIDE SWAP USE_IMPRINT GAIN HAS
@@ -20,7 +20,7 @@
 %token LPAR RPAR LBRACE RBRACE
 %token <AST.currency> CURRENCY
 %token <Fossil.t> FOSSIL
-%token <string> STRING LABEL
+%token <string> STRING LABEL NAME
 %token <int> INT
 
 %left OR
@@ -65,9 +65,19 @@ buy_arguments:
 |
   { [] }
 
+expression_list:
+| arithmetic_expression expression_list
+  { $1::$2 }
+|
+  { [] }
+
 arithmetic_expression:
 | INT
   { Constant $1 }
+| CALL NAME expression_list
+  { Function_call ($2, $3) }
+| NAME
+  { Variable $1 }
 | PDPS
   { Physical_damage_per_second }
 | EDPS
@@ -172,6 +182,26 @@ simple_instruction:
   { node @@ Simple Show_mod_pool }
 | LBRACE instructions RBRACE
   { $2 }
+| RETURN arithmetic_expression
+  { node @@ Simple (Return $2) }
+| NAME EQUAL arithmetic_expression
+  { node @@ Simple (Assignment ($1, $3)) }
+
+name_list:
+| NAME name_list
+  { $1::$2 }
+|
+  { [] }
+
+function_declaration:
+| FUNCTION NAME name_list EQUAL simple_instruction
+  { ($2, $3, $5) }
+
+preamble:
+| function_declaration preamble
+  { $1::$2 }
+|
+  { [] }
 
 instruction:
 | simple_instruction
@@ -194,5 +224,5 @@ instructions:
   { node @@ Noop }
 
 program:
-| instructions EOF
-  { $1 }
+| preamble instructions EOF
+  { ($1, $2) }

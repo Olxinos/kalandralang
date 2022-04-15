@@ -61,6 +61,9 @@ struct
   let iter a f = Map.iter f a
 end
 
+module Environment = Map.Make(String)
+module Library = Map.Make(String)
+
 type state =
   {
     echo: string -> unit;
@@ -71,6 +74,8 @@ type state =
     paid: Amount.t;
     gained: Amount.t;
     program: Linear.program;
+    environment: int Environment.t;
+    return: int;
     point: int; (* program is done is point is out of program.instructions *)
   }
 
@@ -84,6 +89,8 @@ let start ~echo ~debug program =
     paid = Amount.zero;
     gained = Amount.zero;
     program;
+    environment = Environment.empty;
+    return = 0;
     point = 0;
   }
 
@@ -100,77 +107,6 @@ let with_aside state f =
         fail "no item set aside"
     | Some item ->
         f item
-
-let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression) =
-  match expression with
-    | Constant x -> x
-    | Physical_damage_per_second ->
-        int_of_float @@ with_item state Item.calculate_pdps
-    | Elemental_damage_per_second ->
-        int_of_float @@ with_item state Item.calculate_edps
-    | Total_damage_per_second ->
-        int_of_float @@ with_item state Item.calculate_dps
-    | Get stat_id ->
-        with_item state (Item.get_stat_value stat_id)
-    | Sum (lhs, rhs) ->
-        eval_arithmetic_expression state lhs
-        + eval_arithmetic_expression state rhs
-    | Product (lhs, rhs) ->
-        eval_arithmetic_expression state lhs
-        * eval_arithmetic_expression state rhs
-    | Difference (lhs, rhs) ->
-        eval_arithmetic_expression state lhs
-        - eval_arithmetic_expression state rhs
-    | Quotient (lhs, rhs) ->
-        eval_arithmetic_expression state lhs
-        / eval_arithmetic_expression state rhs
-
-
-let rec eval_condition state (condition: AST.condition) =
-  match condition with
-    | True ->
-        true
-    | False ->
-        false
-    | Not condition ->
-        not (eval_condition state condition)
-    | And (a, b) ->
-        eval_condition state a && eval_condition state b
-    | Or (a, b) ->
-        eval_condition state a || eval_condition state b
-    | Has id ->
-        with_item state @@ fun item ->
-        Item.has_mod_id id item
-    | Prefix_count (min, max) ->
-        with_item state @@ fun item ->
-        let count = Item.prefix_count item in
-        min <= count && count <= max
-    | Open_prefix ->
-        with_item state @@ fun item ->
-        Item.prefix_count item < Item.max_prefix_count item
-    | Full_prefixes ->
-        with_item state @@ fun item ->
-        Item.prefix_count item >= Item.max_prefix_count item
-    | Suffix_count (min, max) ->
-        with_item state @@ fun item ->
-        let count = Item.suffix_count item in
-        min <= count && count <= max
-    | Open_suffix ->
-        with_item state @@ fun item ->
-        Item.suffix_count item < Item.max_suffix_count item
-    | Full_suffixes ->
-        with_item state @@ fun item ->
-        Item.suffix_count item >= Item.max_suffix_count item
-    | Is_equal (lhs, rhs) ->
-        eval_arithmetic_expression state lhs == eval_arithmetic_expression state rhs
-    | Greater_than (lhs, rhs) ->
-        eval_arithmetic_expression state lhs > eval_arithmetic_expression state rhs
-    | Greater_equal (lhs, rhs) ->
-        eval_arithmetic_expression state lhs >= eval_arithmetic_expression state rhs
-    | Less_than (lhs, rhs) ->
-        eval_arithmetic_expression state lhs < eval_arithmetic_expression state rhs
-    | Less_equal (lhs, rhs) ->
-        eval_arithmetic_expression state lhs <= eval_arithmetic_expression state rhs
 
 let is_done state =
   state.point < 0 || state.point >= Array.length state.program.instructions
@@ -461,7 +397,114 @@ let apply_currency state (currency: AST.currency) =
         in
         return item
 
-let run_simple_instruction state (instruction: AST.simple_instruction) =
+exception Failed of state * exn
+
+let rec eval_arithmetic_expression library state (expression : AST.arithmetic_expression) =
+  match expression with
+    | Constant x -> x
+    | Variable name ->
+        begin
+        match Environment.find_opt name state.environment with
+          | None -> 0
+          | Some value -> value
+        end
+    | Physical_damage_per_second ->
+        int_of_float @@ with_item state Item.calculate_pdps
+    | Elemental_damage_per_second ->
+        int_of_float @@ with_item state Item.calculate_edps
+    | Total_damage_per_second ->
+        int_of_float @@ with_item state Item.calculate_dps
+    | Get stat_id ->
+        with_item state (Item.get_stat_value stat_id)
+    | Sum (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs
+        + eval_arithmetic_expression library state rhs
+    | Product (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs
+        * eval_arithmetic_expression library state rhs
+    | Difference (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs
+        - eval_arithmetic_expression library state rhs
+    | Quotient (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs
+        / eval_arithmetic_expression library state rhs
+    | Function_call (name, argument_list) ->
+        match Library.find_opt name library with
+        | None -> fail "no function named '%S'" name
+        | Some (argument_names, body) ->
+          if List.length argument_names <> List.length argument_list then
+            fail "wrong arity for function %S" name
+          else
+            let add env arg name =
+              Environment.add name (eval_arithmetic_expression library state arg) env
+            in
+            let local_env =
+              List.fold_left2 add Environment.empty argument_list argument_names
+            in
+            let local_state =
+              { echo = state.echo;
+                debug = state.debug;
+                item = state.item;
+                aside = state.aside;
+                imprint = state.imprint;
+                paid = Amount.zero;
+                gained = Amount.zero;
+                program = body;
+                environment = local_env;
+                return = 0;
+                point = 0
+              }
+            in
+            let local_state = run library local_state in
+              local_state.return
+
+and eval_condition library state (condition: AST.condition) =
+  match condition with
+    | True ->
+        true
+    | False ->
+        false
+    | Not condition ->
+        not (eval_condition library state condition)
+    | And (a, b) ->
+        eval_condition library state a && eval_condition library state b
+    | Or (a, b) ->
+        eval_condition library state a || eval_condition library state b
+    | Has id ->
+        with_item state @@ fun item ->
+        Item.has_mod_id id item
+    | Prefix_count (min, max) ->
+        with_item state @@ fun item ->
+        let count = Item.prefix_count item in
+        min <= count && count <= max
+    | Open_prefix ->
+        with_item state @@ fun item ->
+        Item.prefix_count item < Item.max_prefix_count item
+    | Full_prefixes ->
+        with_item state @@ fun item ->
+        Item.prefix_count item >= Item.max_prefix_count item
+    | Suffix_count (min, max) ->
+        with_item state @@ fun item ->
+        let count = Item.suffix_count item in
+        min <= count && count <= max
+    | Open_suffix ->
+        with_item state @@ fun item ->
+        Item.suffix_count item < Item.max_suffix_count item
+    | Full_suffixes ->
+        with_item state @@ fun item ->
+        Item.suffix_count item >= Item.max_suffix_count item
+    | Is_equal (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs == eval_arithmetic_expression library state rhs
+    | Greater_than (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs > eval_arithmetic_expression library state rhs
+    | Greater_equal (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs >= eval_arithmetic_expression library state rhs
+    | Less_than (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs < eval_arithmetic_expression library state rhs
+    | Less_equal (lhs, rhs) ->
+        eval_arithmetic_expression library state lhs <= eval_arithmetic_expression library state rhs
+
+and run_simple_instruction library state (instruction: AST.simple_instruction) =
   match instruction with
     | Goto label ->
         goto state label
@@ -528,7 +571,7 @@ let run_simple_instruction state (instruction: AST.simple_instruction) =
         state.echo message;
         goto_next state
     | Echo_int expression ->
-        let value = eval_arithmetic_expression state expression in
+        let value = eval_arithmetic_expression library state expression in
         state.echo (string_of_int value);
         goto_next state
     | Show ->
@@ -557,33 +600,37 @@ let run_simple_instruction state (instruction: AST.simple_instruction) =
         List.iter show_mod prefixes;
         List.iter show_mod suffixes;
         goto_next state
+    | Assignment (name, expression) ->
+        let value = eval_arithmetic_expression library state expression in
+        goto_next {state with environment = Environment.add name value state.environment}
+    | Return expression ->
+        let value = eval_arithmetic_expression library state expression in
+        { state with point = Array.length state.program.instructions; return = value }
 
-let run_instruction state (instruction: Linear.instruction AST.node) =
+and run_instruction library state (instruction: Linear.instruction AST.node) =
   match instruction.node with
     | Simple instruction ->
-        run_simple_instruction state instruction
+        run_simple_instruction library state instruction
     | If (condition, label) ->
-        if eval_condition state condition then
+        if eval_condition library state condition then
           goto state label
         else
           { state with point = state.point + 1 }
 
-let step state =
+and step library state =
   if is_done state then
     None
   else
-    Some (run_instruction state state.program.instructions.(state.point))
+    Some (run_instruction library state state.program.instructions.(state.point))
 
-exception Failed of state * exn
-
-let run state =
+and run library state =
   let state = ref state in
   let exception Stop in
   let exception Abort in
   Sys.(set_signal sigint) (Signal_handle (fun _ -> raise Abort));
   try
     while true do
-      match step !state with
+      match step library !state with
         | None ->
             raise Stop
         | Some new_state ->
