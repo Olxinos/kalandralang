@@ -52,19 +52,24 @@ let local_flat_min_physical_increase item : int =
 let local_flat_max_physical_increase item : int =
   get_stat_value item (Id.make "local_maximum_added_physical_damage")
 
+let local_attack_speed_increase item : int =
+  get_stat_value item (Id.make "local_attack_speed_+%")
+
 let calculate_pdps item : float =
-  let total_flat =
+  let total_flat_phys =
     float_of_int @@
         Base_item.min_physical_damage item.base
       + Base_item.max_physical_damage item.base
       + local_flat_min_physical_increase item
       + local_flat_max_physical_increase item
-  and total_percent =
-    (float_of_int @@ local_physical_damage_percent_increase item) /. 100.
-  and attack_time =
+  and total_phys_multiplier =
+    (100. +. (float_of_int @@ local_physical_damage_percent_increase item)) /. 100.
+  and base_attack_time =
     float_of_int @@ Base_item.attack_time_in_milliseconds item.base
+  and speed_multiplier =
+    (100. +. (float_of_int @@ local_attack_speed_increase item)) /. 100.
   in
-    (total_flat) *. (1. +. total_percent) *. 500. /. attack_time
+    total_flat_phys *. total_phys_multiplier *. speed_multiplier *. 500. /. base_attack_time
 
 
 let pp { base; level; tags; rarity; mods; split } =
