@@ -72,8 +72,8 @@ expression_list:
 arithmetic_expression:
 | INT
   { Constant $1 }
-| CALL NAME expression_list
-  { Function_call ($2, $3) }
+| CALL NAME LPAR expression_list RPAR
+  { Function_call ($2, $4) }
 | NAME
   { Variable $1 }
 | GET STRING
