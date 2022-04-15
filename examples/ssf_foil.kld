@@ -1,0 +1,65 @@
+function min_physical_dps = {
+  flat = getmin "local_minimum_added_physical_damage"
+    + getmin "local_maximum_added_physical_damage"
+    + base "physical_damage_min"
+    + base "physical_damage_max"
+  attack_time = base "attack_time"
+  increase = 100 + 20 + getmin "local_physical_damage_+%"
+  speed_increase = 100 + getmin "local_attack_speed_+%"
+  value = flat * increase * speed_increase / (20 * attack_time)
+  return value
+}
+buy warlord "Metadata/Items/Weapons/OneHandWeapons/OneHandThrustingSwords/Rapier21" ilvl 83 for 10 chaos
+.bricked:
+repeat {
+  scour
+  transmute
+  until
+       has "LocalIncreasedPhysicalDamagePercent8"                  # Tyrannical, 170-179% increased phys
+    or has "LocalIncreasedPhysicalDamagePercent7"                  # Merciless,  155-169% increased phys
+#    or has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating8" # Dictator,   75-79% increased phys
+#    or has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating7" # Emperor,    65-74% increased phys
+    or has "LocalAddedPhysicalDamage9" # Flaring, T1 flat phys     # Flaring, adds 22-29 to 45-52 phys
+  do { if no_prefix then augment else alt }
+  if
+    no_suffix
+    and
+      (  has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating8"
+      or has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating7"
+      )
+  then augment
+  regal
+} until prefix_count 1
+if
+     has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating8"
+  or has "LocalIncreasedPhysicalDamagePercentAndAccuracyRating7"
+then {
+  multimod
+  craft "EinharMasterLocalIncreasedPhysicalDamage4___" # 100-129% increased phys
+  craft "EinharMasterLocalPhysicalDamage3"             # adds 13-17 to 26-30 phys
+  until
+       has "LocalIncreasedAttackSpeed8"
+    or has "LocalIncreasedAttackSpeed7"
+    or has "LocalIncreasedAttackSpeed6"
+    or has "LocalIncreasedAttackSpeed5"
+  do harvest_reforge_keep_prefixes
+} else {
+  if suffix_count 2 then annul
+  if prefix_count 1 then {
+    multimod
+    prefixes_cannot_be_changed
+    suffixes_cannot_be_changed
+    harvest_reforge_speed
+    remove_crafted_mods
+    multimod
+    if has "LocalAddedPhysicalDamage9" then craft "EinharMasterLocalIncreasedPhysicalDamage4___"
+    else craft "EinharMasterLocalPhysicalDamage3"
+    craft "EinharMasterLocalIncreasedAttackSpeed3"
+  } else { goto .bricked }
+}
+echo "Physical DpS:"
+pdps = min_physical_dps()
+echo pdps
+if pdps > 450 then { gain 5 exalt stop }
+if pdps > 400 then { gain 2 exalt stop }
+if pdps > 350 then { gain 1 exalt stop }
