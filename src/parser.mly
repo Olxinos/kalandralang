@@ -9,6 +9,7 @@
 %}
 
 %token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
+%token DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token ASTERISK MINUS SLASH
 %token PDPS EDPS DPS
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
@@ -119,6 +120,16 @@ condition:
   { Full_suffixes }
 | LPAR condition RPAR
   { $2 }
+| arithmetic_expression DOUBLEEQUAL arithmetic_expression
+  { Is_equal ($1, $3) }
+| arithmetic_expression GREATER arithmetic_expression
+  { Greater_than ($1, $3) }
+| arithmetic_expression GREATEREQUAL arithmetic_expression
+  { Greater_equal ($1, $3) }
+| arithmetic_expression LESS arithmetic_expression
+  { Less_than ($1, $3) }
+| arithmetic_expression LESSEQUAL arithmetic_expression
+  { Less_equal ($1, $3) }
 
 plus_fossils:
 | PLUS FOSSIL plus_fossils
