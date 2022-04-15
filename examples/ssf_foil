@@ -1,16 +1,9 @@
-function mypdps = {
+function pdps = {
   flat = get "local_minimum_added_physical_damage"
     + get "local_maximum_added_physical_damage"
     + base "physical_damage_min"
     + base "physical_damage_max"
   attack_time = base "attack_time"
-  increase = 100 + 20 + get "local_physical_damage_+%"
-  speed_increase = 100 + get "local_attack_speed_+%"
-  value = flat * increase * speed_increase / (20 * attack_time)
-  return value
-}
-function mypdps_arity_two base_flat_min base_flat_max attack_time = {
-  flat = get "local_minimum_added_physical_damage" + get "local_maximum_added_physical_damage" + base_flat_min + base_flat_max
   increase = 100 + 20 + get "local_physical_damage_+%"
   speed_increase = 100 + get "local_attack_speed_+%"
   value = flat * increase * speed_increase / (20 * attack_time)
@@ -65,9 +58,7 @@ then {
   } else { goto .bricked }
 }
 echo "Physical DpS:"
-echo pdps
-echo call mypdps
-echo call mypdps_arity_two 32 60 (10000/16)
+echo call pdps
 if pdps > 450 then { gain 5 exalt stop }
 if pdps > 400 then { gain 2 exalt stop }
 if pdps > 350 then { gain 1 exalt stop }
