@@ -34,3 +34,9 @@ struct
 end
 
 module Map = Map.Make (M)
+
+let pp_binding (key, value) =
+  Pretext.seq [pp key; Pretext.atom ","; Pretext.OCaml.int value]
+
+let pp_int_map map =
+  Pretext.OCaml.list pp_binding (Map.bindings map)

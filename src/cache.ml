@@ -1,4 +1,4 @@
-let version = "KKASH000"
+let version = "KKASH001"
 
 exception Wrong_version
 
@@ -136,12 +136,13 @@ let i_base_item_domain i: Base_item.domain =
     | 4 -> Abyss_jewel
     | _ -> failwith "invalid base item domain"
 
-let o_base_item o ({ id; domain; item_class; name; tags }: Base_item.t) =
+let o_base_item o ({ id; domain; item_class; name; tags; properties }: Base_item.t) =
   o_id o id;
   o_base_item_domain o domain;
   o_id o item_class;
   o_id o name;
-  o_id_set o tags
+  o_id_set o tags;
+  o_id_map_with_keys o_int o properties
 
 let i_base_item i: Base_item.t =
   let id = i_id i in
@@ -149,7 +150,8 @@ let i_base_item i: Base_item.t =
   let item_class = i_id i in
   let name = i_id i in
   let tags = i_id_set i in
-  { id; domain; item_class; name; tags }
+  let properties = i_id_map_with_keys i_int i in
+  { id; domain; item_class; name; tags; properties }
 
 let o_mod_generation_type o (x: Mod.generation_type) =
   match x with
