@@ -46,6 +46,10 @@
     | "no_suffix" -> NO_SUFFIX
     | "open_suffix" -> OPEN_SUFFIX
     | "full_suffixes" -> FULL_SUFFIXES
+    (* Expressions *)
+    | "Pdps" -> PDPS
+    | "Edps" -> EDPS
+    | "Dps" -> DPS
     (* Currencies *)
     | "transmute" -> CURRENCY Orb_of_transmutation
     | "augment" -> CURRENCY Orb_of_augmentation
@@ -173,6 +177,14 @@ rule token = parse
   | '"' ([^'"' '\n']* as x) '"' { STRING x }
   | ['a'-'z' '_']+ as x { keyword x }
   | ".." { DOT_DOT }
+  | "==" { DOUBLEEQUAL }
+  | ">" { GREATER }
+  | ">=" { GREATEREQUAL }
+  | "<" { LESS }
+  | "<=" { LESSEQUAL }
+  | "*" { ASTERISK }
+  | "-" { MINUS }
+  | "/" { SLASH }
   | '(' { LPAR }
   | ')' { RPAR }
   | '{' { LBRACE }
