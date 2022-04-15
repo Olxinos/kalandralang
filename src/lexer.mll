@@ -31,7 +31,6 @@
     | "echo" -> ECHO
     | "return" -> RETURN
     | "function" -> FUNCTION
-    | "call" -> CALL
     | "show" -> SHOW
     | "show_mod_pool" -> SHOW_MOD_POOL
     (* Conditions *)
@@ -51,6 +50,8 @@
     | "full_suffixes" -> FULL_SUFFIXES
     (* Expressions *)
     | "get" -> GET
+    | "base" -> BASE
+    | "call" -> CALL
     | "pdps" -> PDPS
     | "edps" -> EDPS
     | "dps" -> DPS

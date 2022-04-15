@@ -416,6 +416,8 @@ let rec eval_arithmetic_expression library state (expression : AST.arithmetic_ex
         int_of_float @@ with_item state Item.calculate_dps
     | Get stat_id ->
         with_item state (Item.get_stat_value stat_id)
+    | Base stat_id ->
+        with_item state (fun item -> Base_item.get_property item.base stat_id)
     | Sum (lhs, rhs) ->
         eval_arithmetic_expression library state lhs
         + eval_arithmetic_expression library state rhs

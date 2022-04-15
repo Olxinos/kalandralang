@@ -110,19 +110,19 @@ let load filename =
   in
   List.iter add_entry JSON.(parse_file filename |> as_object)
 
-let get_property base_item (property_name : string) : int =
-  match Id.Map.find_opt (Id.make property_name) base_item.properties with
+let get_property base_item (property_id : Id.t) : int =
+  match Id.Map.find_opt property_id base_item.properties with
     | Some x -> x
-    | None -> fail "no '%S' property in base item %S" (property_name) (Id.show base_item.id)
+    | None -> fail "no '%S' property in base item %S" (Id.show property_id) (Id.show base_item.id)
 
 let attack_time_in_milliseconds base_item =
-  get_property base_item "attack_time"
+  get_property base_item (Id.make "attack_time")
 
 let min_physical_damage base_item =
-  get_property base_item "physical_damage_min"
+  get_property base_item (Id.make "physical_damage_min")
 
 let max_physical_damage base_item =
-  get_property base_item "physical_damage_max"
+  get_property base_item (Id.make "physical_damage_max")
 
 let by_id id =
   match Id.Map.find_opt id !id_map with

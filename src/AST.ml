@@ -286,6 +286,7 @@ type arithmetic_expression =
   | Elemental_damage_per_second
   | Total_damage_per_second
   | Get of Id.t
+  | Base of Id.t
   | Function_call of string * arithmetic_expression list
   | Sum of arithmetic_expression * arithmetic_expression
   | Product of arithmetic_expression * arithmetic_expression
@@ -329,6 +330,7 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
     | Elemental_damage_per_second -> atom "edps"
     | Total_damage_per_second -> atom "dps"
     | Get state_id -> seq [atom "get"; space; atom (Id.show state_id)]
+    | Base state_id -> seq [atom "base"; space; atom (Id.show state_id)]
     | Sum (lhs, rhs) ->
         let parentheses =
           match ctx with
@@ -370,7 +372,8 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
     | Function_call (name, argument_list) ->
-        seq [atom name; space; pp_argument_list argument_list]
+        seq [atom "call"; space; atom name; space; pp_argument_list argument_list]
+
 and pp_argument_list = function
   | [] -> Pretext.empty
   | argument::argument_list ->

@@ -11,7 +11,7 @@
 %token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
 %token EQUAL DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token ASTERISK MINUS SLASH
-%token PDPS EDPS DPS GET RETURN FUNCTION CALL
+%token PDPS EDPS DPS GET BASE RETURN FUNCTION CALL
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
 %token SHAPER ELDER CRUSADER HUNTER REDEEMER WARLORD
 %token IF THEN ELSE UNTIL REPEAT WHILE DO GOTO STOP SET_ASIDE SWAP USE_IMPRINT GAIN HAS
@@ -84,6 +84,8 @@ arithmetic_expression:
   { Total_damage_per_second }
 | GET STRING
   { Get (Id.make $2) }
+| BASE STRING
+  { Base (Id.make $2) }
 | arithmetic_expression PLUS arithmetic_expression
   { Sum ($1, $3) }
 | arithmetic_expression ASTERISK arithmetic_expression
