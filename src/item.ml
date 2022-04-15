@@ -55,6 +55,24 @@ let local_flat_max_physical_increase item : int =
 let local_attack_speed_increase item : int =
   get_stat_value item (Id.make "local_attack_speed_+%")
 
+let local_flat_min_cold_damage_increase item : int =
+  get_stat_value item (Id.make "local_minimum_added_cold_damage")
+
+let local_flat_min_fire_damage_increase item : int =
+  get_stat_value item (Id.make "local_minimum_added_fire_damage")
+
+let local_flat_min_lightning_damage_increase item : int =
+  get_stat_value item (Id.make "local_minimum_added_lightning_damage")
+
+let local_flat_max_cold_damage_increase item : int =
+  get_stat_value item (Id.make "local_maximum_added_cold_damage")
+
+let local_flat_max_fire_damage_increase item : int =
+  get_stat_value item (Id.make "local_maximum_added_fire_damage")
+
+let local_flat_max_lightning_damage_increase item : int =
+  get_stat_value item (Id.make "local_maximum_added_lightning_damage")
+
 let calculate_pdps item : float =
   let total_flat_phys =
     float_of_int @@
@@ -71,6 +89,24 @@ let calculate_pdps item : float =
   in
     total_flat_phys *. total_phys_multiplier *. speed_multiplier *. 500. /. base_attack_time
 
+let calculate_edps item : float =
+  let total_flat_elemental =
+    float_of_int @@
+        local_flat_min_cold_damage_increase item
+      + local_flat_min_fire_damage_increase item
+      + local_flat_min_lightning_damage_increase item
+      + local_flat_max_cold_damage_increase item
+      + local_flat_max_fire_damage_increase item
+      + local_flat_max_lightning_damage_increase item
+    and base_attack_time =
+      float_of_int @@ Base_item.attack_time_in_milliseconds item.base
+    and speed_multiplier =
+      (100. +. (float_of_int @@ local_attack_speed_increase item)) /. 100.
+    in
+      total_flat_elemental *. speed_multiplier *. 500. /. base_attack_time
+
+let calculate_dps item : float =
+  (calculate_pdps item) +. (calculate_edps item)
 
 let pp { base; level; tags; rarity; mods; split } =
   Pretext.OCaml.record [
