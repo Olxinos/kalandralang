@@ -52,7 +52,7 @@ let seq a b =
 
 let seql l = List.fold_left seq empty l
 
-let rec compile ({ node; loc }: AST.t): program =
+let rec compile ({ node; loc }: AST.instruction_node AST.node): program =
   match node with
     | Noop ->
         empty

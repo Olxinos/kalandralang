@@ -311,9 +311,11 @@ let make_buy args =
 
 type arithmetic_expression =
   | Constant of int
+  | Variable of string
   | Get_min of Id.t
   | Get_max of Id.t
   | Base of Id.t
+  | Function_call of string * arithmetic_expression list
   | Sum of arithmetic_expression * arithmetic_expression
   | Product of arithmetic_expression * arithmetic_expression
   | Difference of arithmetic_expression * arithmetic_expression
@@ -351,6 +353,7 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
   let open Pretext in
   match expression with
     | Constant x -> int x
+    | Variable x -> atom x
     | Get_min state_id -> seq [atom "getmin"; space; atom (Id.show state_id)]
     | Get_max state_id -> seq [atom "getmax"; space; atom (Id.show state_id)]
     | Base state_id -> seq [atom "base"; space; atom (Id.show state_id)]
@@ -394,6 +397,12 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
               pp_arithmetic_expression ~ctx: `product_or_quotient lhs; space; atom "/"; break;
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
+    | Function_call (name, argument_list) ->
+        seq [atom name; space; pp_argument_list argument_list]
+and pp_argument_list = function
+  | [] -> Pretext.empty
+  | argument::argument_list ->
+      Pretext.seq [pp_arithmetic_expression argument; Pretext.break; pp_argument_list argument_list]
 
 let rec pp_condition ?(ctx = `top) condition =
   let open Pretext in
@@ -470,6 +479,8 @@ type simple_instruction =
   | Echo_int of arithmetic_expression
   | Show
   | Show_mod_pool
+  | Return of arithmetic_expression
+  | Assignment of string * arithmetic_expression
 
 let pp_simple_instruction instruction =
   let open Pretext in
@@ -494,6 +505,10 @@ let pp_simple_instruction instruction =
         box [ atom "echo"; space; pp_string message ]
     | Echo_int expression ->
         box [ atom "echo"; space; pp_arithmetic_expression expression ]
+    | Return expression ->
+        seq [ atom "gain"; space; pp_arithmetic_expression expression ]
+    | Assignment (variable, expression) ->
+        seq [ atom variable; space; atom "="; space; pp_arithmetic_expression expression ]
     | Show ->
         atom "show"
     | Show_mod_pool ->
@@ -501,15 +516,17 @@ let pp_simple_instruction instruction =
 
 type instruction_node =
   | Noop
-  | Seq of t * t
+  | Seq of instruction_node node * instruction_node node
   | Label of Label.t
   | Simple of simple_instruction
-  | If of condition * t * t option
-  | Until of condition * t
-  | While of condition * t
-  | Repeat of t * condition
+  | If of condition * instruction_node node * instruction_node node option
+  | Until of condition * instruction_node node
+  | While of condition * instruction_node node
+  | Repeat of instruction_node node * condition
 
-and t = instruction_node node
+type function_declaration = string * string list * instruction_node node
+type preamble = function_declaration list
+type t = preamble * instruction_node node
 
 let block contents =
   let open Pretext in

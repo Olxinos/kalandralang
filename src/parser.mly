@@ -8,10 +8,10 @@
     }
 %}
 
-%token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF
-%token DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
+%token COLON AND OR NOT PLUS DOT_DOT TRUE FALSE EOF COMMA
+%token EQUAL DOUBLEEQUAL GREATER GREATEREQUAL LESS LESSEQUAL
 %token ASTERISK MINUS SLASH
-%token GETMIN GETMAX BASE
+%token GETMIN GETMAX BASE RETURN FUNCTION
 %token BUY ILVL WITH FRACTURED FOR CRAFT ECHO SHOW SHOW_MOD_POOL
 %token SHAPER ELDER CRUSADER HUNTER REDEEMER WARLORD EXARCH EATER SYNTHESIZED
 %token IF THEN ELSE UNTIL REPEAT WHILE DO GOTO STOP SET_ASIDE SWAP USE_IMPRINT GAIN HAS
@@ -20,7 +20,7 @@
 %token LPAR RPAR LBRACE RBRACE
 %token <AST.currency> CURRENCY
 %token <Fossil.t> FOSSIL
-%token <string> STRING LABEL
+%token <string> STRING LABEL NAME
 %token <int> INT
 
 %left OR
@@ -66,9 +66,25 @@ buy_arguments:
 |
   { [] }
 
+non_empty_expression_list:
+| arithmetic_expression COMMA non_empty_expression_list
+  { $1::$3 }
+| arithmetic_expression
+  { [$1] }
+
+expression_list:
+| non_empty_expression_list
+  { $1 }
+|
+  { [] }
+
 arithmetic_expression:
 | INT
   { Constant $1 }
+| NAME LPAR expression_list RPAR
+  { Function_call ($1, $3) }
+| NAME
+  { Variable $1 }
 | GETMIN STRING
   { Get_min (Id.make $2) }
 | GETMAX STRING
@@ -171,6 +187,26 @@ simple_instruction:
   { node @@ Simple Show_mod_pool }
 | LBRACE instructions RBRACE
   { $2 }
+| RETURN arithmetic_expression
+  { node @@ Simple (Return $2) }
+| NAME EQUAL arithmetic_expression
+  { node @@ Simple (Assignment ($1, $3)) }
+
+name_list:
+| NAME name_list
+  { $1::$2 }
+|
+  { [] }
+
+function_declaration:
+| FUNCTION NAME name_list EQUAL simple_instruction
+  { ($2, $3, $5) }
+
+preamble:
+| function_declaration preamble
+  { $1::$2 }
+|
+  { [] }
 
 instruction:
 | simple_instruction
@@ -193,5 +229,5 @@ instructions:
   { node @@ Noop }
 
 program:
-| instructions EOF
-  { $1 }
+| preamble instructions EOF
+  { ($1, $2) }

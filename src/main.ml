@@ -50,7 +50,7 @@ let parse_recipe filename =
     | None -> parse_recipe_stdin ()
     | Some filename -> parse_recipe_file filename
 
-let run_recipe recipe ~count ~verbose =
+let run_recipe library recipe ~count ~verbose =
   let debug s = if verbose then print_endline s in
   let module A = Interpreter.Amount in
   let paid = ref A.zero in
@@ -66,7 +66,7 @@ let run_recipe recipe ~count ~verbose =
   try
     for i = 1 to count do
       if i > 1 then echo "";
-      let state = Interpreter.(run (start ~echo: print_endline ~debug recipe)) in
+      let state = Interpreter.(run library (start ~echo: print_endline ~debug recipe)) in
       paid := A.add !paid state.paid;
       gained := A.add !gained state.gained;
       let profit = A.sub state.gained state.paid |> A.to_chaos in
@@ -347,11 +347,17 @@ let main () =
   Clap.close ();
   match command with
     | `format filename ->
-        let recipe = parse_recipe filename in
+        let (_, recipe) = parse_recipe filename in
         Pretext.to_channel ~starting_level: 2 stdout (AST.pp recipe)
     | `run (filename, count, verbose, seed, show_seed) ->
-        let recipe = parse_recipe filename in
+        let (preamble, recipe) = parse_recipe filename in
         let compiled_recipe = Linear.compile recipe in
+        let compile_function library (fname, argument_list, body) =
+          Interpreter.Library.add fname (argument_list, Linear.compile body) library
+        in
+        let preamble =
+          List.fold_left compile_function Interpreter.Library.empty preamble
+        in
         load ();
         Option.iter Random.init seed;
         if show_seed then (
@@ -368,9 +374,9 @@ let main () =
           in
           echo "Seed: %d" seed
         );
-        run_recipe compiled_recipe ~count ~verbose
+        run_recipe preamble compiled_recipe ~count ~verbose
     | `compile filename ->
-        let recipe = parse_recipe filename in
+        let (_, recipe) = parse_recipe filename in
         let compiled_recipe = Linear.compile recipe in
         let decompiled_recipe = Linear.decompile compiled_recipe in
         let output decompiled_recipe =

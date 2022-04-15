@@ -32,6 +32,8 @@
     | "use_imprint" -> USE_IMPRINT
     | "gain" -> GAIN
     | "echo" -> ECHO
+    | "return" -> RETURN
+    | "function" -> FUNCTION
     | "show" -> SHOW
     | "show_mod_pool" -> SHOW_MOD_POOL
     (* Conditions *)
@@ -173,7 +175,7 @@
     | "remove_crafted_mods" -> CURRENCY Remove_crafted_mods
     | "craft_any_prefix" -> CURRENCY Craft_any_prefix
     | "craft_any_suffix" -> CURRENCY Craft_any_suffix
-    | s -> failwith ("unknown keyword: " ^ s)
+    | s -> NAME s
 }
 
 rule token = parse
@@ -191,12 +193,14 @@ rule token = parse
   | '"' ([^'"' '\n']* as x) '"' { STRING x }
   | ['a'-'z' '_']+ as x { keyword x }
   | ".." { DOT_DOT }
+  | "=" { EQUAL }
   | "==" { DOUBLEEQUAL }
   | ">" { GREATER }
   | ">=" { GREATEREQUAL }
   | "<" { LESS }
   | "<=" { LESSEQUAL }
   | "*" { ASTERISK }
+  | "," { COMMA }
   | "-" { MINUS }
   | "/" { SLASH }
   | '(' { LPAR }
