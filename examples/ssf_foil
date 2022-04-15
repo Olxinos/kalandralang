@@ -1,4 +1,4 @@
-function pdps = {
+function physical_dps = {
   flat = get "local_minimum_added_physical_damage"
     + get "local_maximum_added_physical_damage"
     + base "physical_damage_min"
@@ -58,7 +58,8 @@ then {
   } else { goto .bricked }
 }
 echo "Physical DpS:"
-echo call pdps()
+pdps = call physical_dps()
+echo pdps
 if pdps > 450 then { gain 5 exalt stop }
 if pdps > 400 then { gain 2 exalt stop }
 if pdps > 350 then { gain 1 exalt stop }
