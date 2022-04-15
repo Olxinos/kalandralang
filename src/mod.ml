@@ -44,6 +44,12 @@ type t =
     stats: stat list;
   }
 
+let get_stat_value ?(acc = 0) (modifier : t) (stat_id : Id.t) : int =
+  let accumulate acc (stat : stat) =
+    if compare stat.id stat_id == 0 then acc + stat.min else acc
+  in
+    List.fold_left accumulate acc modifier.stats
+
 let is_prefix modifier =
   match modifier.generation_type with
     | Prefix ->

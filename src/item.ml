@@ -36,13 +36,35 @@ type t =
     split: bool;
   }
 
-let calculate_pdps item : float =
-  let flat_min = float_of_int @@ Base_item.min_physical_damage item.base
-  and flat_max = float_of_int @@ Base_item.max_physical_damage item.base
-  and attack_time = float_of_int @@ Base_item.attack_time_in_milliseconds item.base
+let get_stat_value (item : t) (stat_id : Id.t) : int =
+  let accumulate acc modifier =
+    Mod.get_stat_value ~acc: acc modifier.modifier stat_id
   in
-    (* assumes 20% quality, ignores mods TODO *)
-    (flat_min +. flat_max) *. 1.2 *. 500. /. attack_time
+    List.fold_left accumulate 0 item.mods
+
+let local_physical_damage_percent_increase item : int =
+  (* assumes 20% quality *)
+  20 + get_stat_value item (Id.make "local_physical_damage_+%")
+
+let local_flat_min_physical_increase item : int =
+  get_stat_value item (Id.make "local_minimum_added_physical_damage")
+
+let local_flat_max_physical_increase item : int =
+  get_stat_value item (Id.make "local_maximum_added_physical_damage")
+
+let calculate_pdps item : float =
+  let total_flat =
+    float_of_int @@
+        Base_item.min_physical_damage item.base
+      + Base_item.max_physical_damage item.base
+      + local_flat_min_physical_increase item
+      + local_flat_max_physical_increase item
+  and total_percent =
+    (float_of_int @@ local_physical_damage_percent_increase item) /. 100.
+  and attack_time =
+    float_of_int @@ Base_item.attack_time_in_milliseconds item.base
+  in
+    (total_flat) *. (1. +. total_percent) *. 500. /. attack_time
 
 
 let pp { base; level; tags; rarity; mods; split } =
