@@ -253,19 +253,15 @@ let values_for_mode translation = function
   | With_ranges ranges ->
       let get_value stat_id =
         match Id.Map.find_opt stat_id ranges with
-          | None ->
-              (-9999)
-          | Some (min, max) ->
-              (min + max) / 2
+          | None -> 0
+          | Some (min, max) -> (min + max) / 2
       in
       List.map get_value translation.stats
   | With_values values ->
       let get_value stat_id =
         match Id.Map.find_opt stat_id values with
-          | None ->
-              (-9999)
-          | Some value ->
-              value
+          | None -> 0
+          | Some value -> value
       in
       List.map get_value translation.stats
 
@@ -277,7 +273,7 @@ let translate_one mode translation =
       match values, conditions with
         | [], [] | [], _ :: _ | _ :: _, [] ->
             true
-        | value :: other_values, condition :: other_conditions ->
+        | value::other_values, condition::other_conditions ->
             (
               match condition.min with
                 | None -> true
