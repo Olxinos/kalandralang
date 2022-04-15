@@ -58,7 +58,7 @@ then {
   } else { goto .bricked }
 }
 echo "Physical DpS:"
-echo call pdps
+echo call pdps()
 if pdps > 450 then { gain 5 exalt stop }
 if pdps > 400 then { gain 2 exalt stop }
 if pdps > 350 then { gain 1 exalt stop }
