@@ -6,10 +6,13 @@
   tls
   cohttp-lwt-unix
   lwt
+  menhirLib
   ezjsonm
   clap
   re))
 
 (ocamllex lexer)
 
-(ocamlyacc parser)
+(menhir
+  (modules parser)
+  (flags -v --table))
