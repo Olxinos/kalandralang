@@ -47,6 +47,7 @@
     | "open_suffix" -> OPEN_SUFFIX
     | "full_suffixes" -> FULL_SUFFIXES
     (* Expressions *)
+    | "get" -> GET
     | "pdps" -> PDPS
     | "edps" -> EDPS
     | "dps" -> DPS

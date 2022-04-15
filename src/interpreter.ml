@@ -110,6 +110,8 @@ let rec eval_arithmetic_expression state (expression : AST.arithmetic_expression
         int_of_float @@ with_item state Item.calculate_edps
     | Total_damage_per_second ->
         int_of_float @@ with_item state Item.calculate_dps
+    | Get stat_id ->
+        with_item state (Item.get_stat_value stat_id)
     | Sum (lhs, rhs) ->
         eval_arithmetic_expression state lhs
         + eval_arithmetic_expression state rhs

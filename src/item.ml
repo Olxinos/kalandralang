@@ -36,7 +36,7 @@ type t =
     split: bool;
   }
 
-let get_stat_value (item : t) (stat_id : Id.t) : int =
+let get_stat_value (stat_id : Id.t) (item : t) : int =
   let accumulate acc modifier =
     Mod.get_stat_value ~acc: acc modifier.modifier stat_id
   in
@@ -44,34 +44,34 @@ let get_stat_value (item : t) (stat_id : Id.t) : int =
 
 let local_physical_damage_percent_increase item : int =
   (* assumes 20% quality *)
-  20 + get_stat_value item (Id.make "local_physical_damage_+%")
+  20 + get_stat_value (Id.make "local_physical_damage_+%") item
 
 let local_flat_min_physical_increase item : int =
-  get_stat_value item (Id.make "local_minimum_added_physical_damage")
+  get_stat_value (Id.make "local_minimum_added_physical_damage") item
 
 let local_flat_max_physical_increase item : int =
-  get_stat_value item (Id.make "local_maximum_added_physical_damage")
+  get_stat_value (Id.make "local_maximum_added_physical_damage") item
 
 let local_attack_speed_increase item : int =
-  get_stat_value item (Id.make "local_attack_speed_+%")
+  get_stat_value (Id.make "local_attack_speed_+%") item
 
 let local_flat_min_cold_damage_increase item : int =
-  get_stat_value item (Id.make "local_minimum_added_cold_damage")
+  get_stat_value (Id.make "local_minimum_added_cold_damage") item
 
 let local_flat_min_fire_damage_increase item : int =
-  get_stat_value item (Id.make "local_minimum_added_fire_damage")
+  get_stat_value (Id.make "local_minimum_added_fire_damage") item
 
 let local_flat_min_lightning_damage_increase item : int =
-  get_stat_value item (Id.make "local_minimum_added_lightning_damage")
+  get_stat_value (Id.make "local_minimum_added_lightning_damage") item
 
 let local_flat_max_cold_damage_increase item : int =
-  get_stat_value item (Id.make "local_maximum_added_cold_damage")
+  get_stat_value (Id.make "local_maximum_added_cold_damage") item
 
 let local_flat_max_fire_damage_increase item : int =
-  get_stat_value item (Id.make "local_maximum_added_fire_damage")
+  get_stat_value (Id.make "local_maximum_added_fire_damage") item
 
 let local_flat_max_lightning_damage_increase item : int =
-  get_stat_value item (Id.make "local_maximum_added_lightning_damage")
+  get_stat_value (Id.make "local_maximum_added_lightning_damage") item
 
 let calculate_pdps item : float =
   let total_flat_phys =

@@ -284,6 +284,7 @@ type arithmetic_expression =
   | Physical_damage_per_second
   | Elemental_damage_per_second
   | Total_damage_per_second
+  | Get of Id.t
   | Sum of arithmetic_expression * arithmetic_expression
   | Product of arithmetic_expression * arithmetic_expression
   | Difference of arithmetic_expression * arithmetic_expression
@@ -324,6 +325,7 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
     | Physical_damage_per_second -> atom "pdps"
     | Elemental_damage_per_second -> atom "edps"
     | Total_damage_per_second -> atom "dps"
+    | Get state_id -> seq [atom "get"; space; atom (Id.show state_id)]
     | Sum (lhs, rhs) ->
         let parentheses =
           match ctx with
