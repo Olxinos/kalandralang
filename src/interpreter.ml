@@ -523,6 +523,10 @@ let run_simple_instruction state (instruction: AST.simple_instruction) =
     | Echo message ->
         state.echo message;
         goto_next state
+    | Echo_int expression ->
+        let value = eval_arithmetic_expression state expression in
+        state.echo (string_of_int value);
+        goto_next state
     | Show ->
         (
           match state.item with

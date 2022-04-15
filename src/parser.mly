@@ -162,6 +162,8 @@ simple_instruction:
   { node @@ Simple (Gain $2) }
 | ECHO STRING
   { node @@ Simple (Echo $2) }
+| ECHO arithmetic_expression
+  { node @@ Simple (Echo_int $2) }
 | SHOW
   { node @@ Simple Show }
 | SHOW_MOD_POOL

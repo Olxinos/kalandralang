@@ -437,6 +437,7 @@ type simple_instruction =
   | Use_imprint
   | Gain of amount
   | Echo of string
+  | Echo_int of arithmetic_expression
   | Show
   | Show_mod_pool
 
@@ -461,6 +462,8 @@ let pp_simple_instruction instruction =
         seq [ atom "gain"; space; pp_amount amount ]
     | Echo message ->
         box [ atom "echo"; space; pp_string message ]
+    | Echo_int expression ->
+        box [ atom "echo"; space; pp_arithmetic_expression expression ]
     | Show ->
         atom "show"
     | Show_mod_pool ->
