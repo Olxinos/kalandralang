@@ -59,7 +59,7 @@ let roll_modifier modifier : t =
 
 let get_stat_value ?(acc = 0) (modifier : t) (stat_id : Id.t) : int =
   let accumulate acc (stat : stat) =
-    if compare stat.id stat_id == 0 then acc + stat.min else acc
+    if compare stat.id stat_id == 0 then acc + stat.current else acc
   in
     List.fold_left accumulate acc modifier.stats
 
