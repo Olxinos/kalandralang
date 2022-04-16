@@ -354,17 +354,18 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
   match expression with
     | Constant x -> int x
     | Variable x -> atom x
-    | Get_min state_id -> seq [atom "getmin"; space; atom (Id.show state_id)]
-    | Get_max state_id -> seq [atom "getmax"; space; atom (Id.show state_id)]
-    | Base state_id -> seq [atom "base"; space; atom (Id.show state_id)]
+    | Get_min state_id -> box [atom "getmin"; space; Id.pp state_id]
+    | Get_max state_id -> box [atom "getmax"; space; Id.pp state_id]
+    | Base state_id -> box [atom "base"; space; Id.pp state_id]
     | Sum (lhs, rhs) ->
         let parentheses =
           match ctx with
             | `top -> false
             | `product_or_quotient | `right_hand_side -> true
           in
-            maybe_parentheses parentheses @@ seq [
-              pp_arithmetic_expression lhs; space; atom "+"; break;
+            maybe_parentheses parentheses @@ box [
+              pp_arithmetic_expression lhs;
+              break; atom "+"; space;
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
     | Product (lhs, rhs) ->
@@ -373,8 +374,9 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
             | `top | `product_or_quotient -> false
             | `right_hand_side -> true
           in
-            maybe_parentheses parentheses @@ seq [
-              pp_arithmetic_expression ~ctx: `product_or_quotient lhs; space; atom "*"; break;
+            maybe_parentheses parentheses @@ box [
+              pp_arithmetic_expression ~ctx: `product_or_quotient lhs;
+              break; atom "*"; space;
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
     | Difference (lhs, rhs) ->
@@ -383,8 +385,9 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
             | `top -> false
             | `product_or_quotient | `right_hand_side -> true
           in
-            maybe_parentheses parentheses @@ seq [
-              pp_arithmetic_expression lhs; space; atom "-"; break;
+            maybe_parentheses parentheses @@ box [
+              pp_arithmetic_expression lhs;
+              break; atom "-"; space;
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
     | Quotient (lhs, rhs) ->
@@ -393,16 +396,25 @@ let rec pp_arithmetic_expression ?(ctx = `top) expression =
             | `top | `product_or_quotient -> false
             | `right_hand_side -> true
           in
-            maybe_parentheses parentheses @@ seq [
-              pp_arithmetic_expression ~ctx: `product_or_quotient lhs; space; atom "/"; break;
+            maybe_parentheses parentheses @@ box [
+              pp_arithmetic_expression ~ctx: `product_or_quotient lhs;
+              break; atom "/"; space;
               pp_arithmetic_expression ~ctx: `right_hand_side rhs
             ]
     | Function_call (name, argument_list) ->
-        seq [atom name; space; pp_argument_list argument_list]
+        box [
+          atom name;
+          maybe_parentheses true @@ (pp_argument_list argument_list)
+        ]
+
 and pp_argument_list = function
   | [] -> Pretext.empty
+  | [argument] -> pp_arithmetic_expression argument
   | argument::argument_list ->
-      Pretext.seq [pp_arithmetic_expression argument; Pretext.break; pp_argument_list argument_list]
+      Pretext.seq [
+        pp_arithmetic_expression argument; Pretext.atom ","; Pretext.space;
+        pp_argument_list argument_list
+      ]
 
 let rec pp_condition ?(ctx = `top) condition =
   let open Pretext in
@@ -506,7 +518,7 @@ let pp_simple_instruction instruction =
     | Echo_int expression ->
         box [ atom "echo"; space; pp_arithmetic_expression expression ]
     | Return expression ->
-        seq [ atom "gain"; space; pp_arithmetic_expression expression ]
+        seq [ atom "return"; space; pp_arithmetic_expression expression ]
     | Assignment (variable, expression) ->
         seq [ atom variable; space; atom "="; space; pp_arithmetic_expression expression ]
     | Show ->
@@ -607,4 +619,27 @@ let rec pp_instruction_node instruction =
 and pp_instruction instruction =
   pp_instruction_node instruction.node
 
-let pp = pp_instruction
+let pp_argument_names names =
+  let open Pretext in
+    List.fold_left (fun acc name -> seq [acc; atom name]) empty names
+
+let pp_function_declaration (name, argument_names, body) =
+  let open Pretext in
+    box [
+      box [
+        atom "function"; space; atom name;
+        indent; break; pp_argument_names argument_names; break; dedent;
+        atom "=";
+      ];
+      block (pp_instruction body);
+    ]
+
+let pp_preamble preamble =
+  let open Pretext in
+  let add_function_declaration acc fdecl =
+    seq [ acc; (pp_function_declaration fdecl); empty_line; ]
+  in
+    List.fold_left add_function_declaration empty preamble
+
+let pp (preamble, instruction) =
+  Pretext.seq [ pp_preamble preamble; pp_instruction instruction ]

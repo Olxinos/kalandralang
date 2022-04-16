@@ -347,7 +347,7 @@ let main () =
   Clap.close ();
   match command with
     | `format filename ->
-        let (_, recipe) = parse_recipe filename in
+        let recipe = parse_recipe filename in
         Pretext.to_channel ~starting_level: 2 stdout (AST.pp recipe)
     | `run (filename, count, verbose, seed, show_seed) ->
         let (preamble, recipe) = parse_recipe filename in
@@ -376,11 +376,20 @@ let main () =
         );
         run_recipe preamble compiled_recipe ~count ~verbose
     | `compile filename ->
-        let (_, recipe) = parse_recipe filename in
+        let compile_function (fname, arguments, body) =
+          (fname, arguments, Linear.compile body)
+        and decompile_function (fname, arguments, compiled_body) =
+          match Linear.decompile compiled_body with
+            | None -> None
+            | Some decompiled_body ->
+              Some (fname, arguments, decompiled_body)
+        and (preamble, recipe) = parse_recipe filename in
         let compiled_recipe = Linear.compile recipe in
+        let compiled_preamble = List.map compile_function preamble in
         let decompiled_recipe = Linear.decompile compiled_recipe in
+        let decompiled_preamble = List.filter_map decompile_function compiled_preamble in
         let output decompiled_recipe =
-          Pretext.to_channel ~starting_level: 2 stdout (AST.pp decompiled_recipe)
+          Pretext.to_channel ~starting_level: 2 stdout (AST.pp (decompiled_preamble, decompiled_recipe))
         in
         Option.iter output decompiled_recipe
     | `find pattern ->
