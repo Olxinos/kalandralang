@@ -446,6 +446,17 @@ In this example, `"GlobalSkillGemLevel1"` is the identifier for the
 
 See also [Finding Identifiers](#finding-identifiers).
 
+#### Variables and functions
+
+Variable and function names are unreserved sequences of lowercase letters
+(`a` to `z`) and underscores `_` (like keywords). Functions must be declared
+before all other instructions. Variables and functions hold and return integers.
+A function without a return statement or an uninitialized variable evaluates
+to `0`.
+Examples:
+- `my_variable = 0`;
+- `function my_function arg1 arg2 = return arg1 + arg2`.
+
 #### Labels
 
 Labels start with a period `.` which is followed by lowercase or uppercase
@@ -1167,6 +1178,15 @@ is a valid amount.
 
 Conditions are expressions that can be used in [If Conditionals](#if-conditionals)
 and [Loops](#loops).
+They are either built-in predicates, comparisons of integral
+expressions (with the operators `<`, `<=`, `>`, `>=`, `==`), negations,
+conjunctions or disjunctions of subconditions (`not`, `and` or `or`).
+Subconditions may contain side-effects, are evaluated left to right, and have
+short-circuit evaluation (for instance, in `a() == 0 || b() > 0`, `a()` is
+evaluated first and `b()` is not evaluated if `a() == 0`)
+Examples:
+- `repeat chaos until has "LocalIncreasedPhysicalDamagePercent8" `
+- `if my_pdps_function() > 400 or my_edps_function() > 600 then gain 2 exalt`
 
 #### Constants
 
@@ -1225,3 +1245,113 @@ The following expressions are conditions that hold depending on the current item
 | `no_suffix` | `no_suffix` | Holds if the item has no suffixes. Same as `suffix_count 0`. |
 | `open_suffix` | `open_suffix` | Holds if the item has at least one open suffix. This is *not* equivalent to `suffix_count 0..2` as it depends on the item's rarity. |
 | `full_suffixes` | `full_suffixes` | Holds if the item cannot have more suffixes. This is *not* equivalent to `suffix_count 3` as it depends on the item's rarity. |
+
+### Integral expressions
+
+Integrals expressions are either number constants, variables, function calls,
+or built-in queries. They can be parenthesized, summed, multiplied,
+divided, or subtracted with the usual operators ( `()`, `+`, `*`, `/`, `-`)
+with the usual precedence rules.
+Subexpressions may contain side-effects and are evaluated left to right
+(for instance, in `a() + b() * c()`, `a()` is evaluated first, then `b()`,
+then `c()`).
+Examples:
+- `2 * 2`;
+- `(my_variable + 2) * 3`;
+- `getmax "local_minimum_added_physical_damage" - getmin "local_minimum_added_physical_damage"`.
+
+#### Variables
+
+`<name> = <integral-expression>` assigns an integer to a variable. Variables are
+global (except with respect to [function invocations](function-invocation)).
+Unassigned variables evaluate to `0`.
+
+#### Queries on current item
+
+| Keyword | Usage | Meaning |
+| --- | --- | --- |
+| `base` | `base <identifier>` | Returns the value of the base item property `<identifier>`. For instance, `base` can retrieve the base damage of a weapon base with `base "physical_damage_min"` or `base "physical_damage_max"`. |
+| `getmin` | `getmin <identifier>` | Returns the total minimum value of the stat `<identifier>` of all explicit mods of the item. For instance, `getmin` can retrieve the sum of all minimum local "#% increased physical damage" possible rolls of all explicit mods on the item with `getmin "local_physical_damage_+%"`. |
+| `getmax` | `getmax <identifier>` | Returns the total maximum value of the stat `<identifier>` of all explicit mods of the item. It works the same way as `getmin`. |
+
+### Functions
+
+#### Declaration
+
+`function <name> <name-list> = <instruction>` (where `<name-list>`
+denotes a whitespace-separated list of argument names) declares a function.
+Functions must be declared before all other instructions of the recipe.
+Example:
+```
+function min_physical_dps quality = {
+  flat = getmin "local_minimum_added_physical_damage"
+    + getmin "local_maximum_added_physical_damage"
+    + base "physical_damage_min"
+    + base "physical_damage_max"
+  attack_time = base "attack_time"
+  increased_physical = 100 + quality + getmin "local_physical_damage_+%"
+  increased_speed = 100 + getmin "local_attack_speed_+%"
+  value = flat * increased_physical * increased_speed / (20 * attack_time)
+  return value
+}
+```
+
+#### Function invocation
+
+`<name>(<argument-list>)` (where `<argument-list>` denotes a comma-separated list
+of [integral expressions](integral-expressions)) calls a function. This executes
+the function body in an environment where each argument name listed in the
+function declaration is assigned to the corresponding evaluated argument
+expression. The arguments are evaluated left to right. Providing a number of
+arguments that doesn't match the number of argument names listed in the function
+declaration is an error.
+
+#### Return
+
+`return <integral-expression>` instructions may appear in a function body.
+
+The execution of the function body ends either when executing a `return`
+expression or after the last instruction of the body is executed, resuming the
+execution of the calling code. Once the execution of a function ends, the
+function invocation evaluates to either the integral-expression of the `return`
+instruction or `0`.
+
+Outside of a function body, `return` instructions behave the same as evaluating
+their argument and calling `stop`.
+
+#### Side-effects
+
+Functions can manipulate the item state (likewise, the imprint and set-aside
+item) and may cause the evaluation of integral expressions and conditions to
+have side-effects. In general, expressions are evaluated left to right.
+
+Except for the arguments passed to the function, variables are not shared
+between the function body and the calling code. Modifying arguments of the
+function has no effect on the calling code (they are passed by copy).
+
+Example:
+```
+function chaos_spam_until_full_suffixes max_rolls = {
+  counter = 0
+  until counter >= max_rolls or full_suffixes repeat {
+    chaos
+    counter = counter + 1
+  }
+  return counter
+}
+
+buy "Metadata/Items/Amulets/Amulet7"
+max_rolls = 10
+counter = 0
+number_of_rolls = chaos_spam_until_full_suffixes(max_rolls)
+echo max_rolls
+echo number_of_rolls
+echo counter
+```
+will output
+```
+10
+<some number between 0 and 10>
+0
+```
+and the chaos-spammed item
